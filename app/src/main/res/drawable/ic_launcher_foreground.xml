@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Background -->
+    <path
+        android:fillColor="#0D0B2A"
+        android:pathData="M0,0 L108,0 L108,108 L0,108 Z" />
+    <!-- A letter stylized -->
+    <path
+        android:fillColor="#6C63FF"
+        android:pathData="M54,18 L78,78 L68,78 L62,62 L46,62 L40,78 L30,78 Z M54,32 L48,56 L60,56 Z" />
+    <!-- Sound wave dots -->
+    <path
+        android:fillColor="#6C63FF"
+        android:fillAlpha="0.6"
+        android:pathData="M20,54 A4,4 0 1,1 20,54.01 Z" />
+    <path
+        android:fillColor="#6C63FF"
+        android:fillAlpha="0.8"
+        android:pathData="M28,46 A4,4 0 1,1 28,46.01 Z" />
+    <path
+        android:fillColor="#6C63FF"
+        android:pathData="M80,54 A4,4 0 1,1 80,54.01 Z" />
+    <path
+        android:fillColor="#6C63FF"
+        android:fillAlpha="0.8"
+        android:pathData="M88,46 A4,4 0 1,1 88,46.01 Z" />
+</vector>

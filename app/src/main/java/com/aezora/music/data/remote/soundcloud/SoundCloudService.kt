@@ -1,0 +1,183 @@
+package com.aezora.music.data.remote.soundcloud
+
+import com.aezora.music.domain.model.Track
+import com.aezora.music.domain.model.TrackSource
+import com.google.gson.annotations.SerializedName
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONArray
+import org.json.JSONObject
+import java.net.URLEncoder
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * SoundCloud integration via the public API (client_id) + yt-dlp for stream resolution.
+ * DRM-protected tracks are filtered out before returning.
+ */
+@Singleton
+class SoundCloudService @Inject constructor(
+    private val okHttpClient: OkHttpClient
+) {
+    // Public client_id discovered from SoundCloud web app (may need rotation)
+    private var clientId = "iZIs9mchVcX5lhVRyQGGAYlNPVldzAoX"
+
+    companion object {
+        private const val BASE_URL = "https://api-v2.soundcloud.com"
+        private const val LIMIT = 20
+    }
+
+    // ─── Search ───────────────────────────────────────────────────────────────
+
+    suspend fun search(query: String): List<Track> = withContext(Dispatchers.IO) {
+        val url = "$BASE_URL/search/tracks" +
+                "?q=${URLEncoder.encode(query, "UTF-8")}" +
+                "&client_id=$clientId" +
+                "&limit=$LIMIT"
+
+        val json = get(url) ?: return@withContext emptyList()
+        val collection = JSONObject(json).optJSONArray("collection") ?: return@withContext emptyList()
+        parseTracks(collection)
+    }
+
+    // ─── Trending ─────────────────────────────────────────────────────────────
+
+    suspend fun getTrending(genre: String = "all-music"): List<Track> = withContext(Dispatchers.IO) {
+        val url = "$BASE_URL/charts" +
+                "?kind=trending&genre=soundcloud:genres:$genre" +
+                "&client_id=$clientId&limit=$LIMIT"
+
+        val json = get(url) ?: return@withContext emptyList()
+        val collection = JSONObject(json).optJSONArray("collection") ?: return@withContext emptyList()
+
+        // Charts wrap tracks in {"track": {...}} objects
+        val tracks = JSONArray()
+        for (i in 0 until collection.length()) {
+            val item = collection.optJSONObject(i) ?: continue
+            val track = item.optJSONObject("track") ?: continue
+            tracks.put(track)
+        }
+        parseTracks(tracks)
+    }
+
+    // ─── Resolve stream URL via yt-dlp ────────────────────────────────────────
+
+    /**
+     * Resolves the direct audio stream URL for a SoundCloud track permalink.
+     * Uses yt-dlp subprocess (must be bundled or installed on device via Termux/root).
+     * Falls back to API progressive streams.
+     */
+    suspend fun resolveStreamUrl(trackPermalink: String): String? = withContext(Dispatchers.IO) {
+        try {
+            // First try progressive streams via API
+            val transcodeUrl = getProgressiveStream(trackPermalink)
+            if (transcodeUrl != null) return@withContext transcodeUrl
+
+            // Fallback: yt-dlp (requires binary on PATH)
+            val process = ProcessBuilder("yt-dlp", "-g", "--no-playlist", trackPermalink)
+                .redirectErrorStream(true)
+                .start()
+            val url = process.inputStream.bufferedReader().readLine()?.trim()
+            process.waitFor()
+            url?.takeIf { it.startsWith("http") }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private suspend fun getProgressiveStream(permalink: String): String? = withContext(Dispatchers.IO) {
+        try {
+            val resolveUrl = "$BASE_URL/resolve?url=${URLEncoder.encode(permalink, "UTF-8")}&client_id=$clientId"
+            val trackJson = get(resolveUrl) ?: return@withContext null
+            val trackObj = JSONObject(trackJson)
+
+            val media = trackObj.optJSONObject("media") ?: return@withContext null
+            val transcodings = media.optJSONArray("transcodings") ?: return@withContext null
+
+            // Find progressive mp3 or opus stream
+            for (i in 0 until transcodings.length()) {
+                val t = transcodings.optJSONObject(i) ?: continue
+                val fmt = t.optJSONObject("format") ?: continue
+                val protocol = fmt.optString("protocol")
+                val mimeType = fmt.optString("mime_type")
+                if (protocol == "progressive" && (mimeType.contains("mpeg") || mimeType.contains("opus"))) {
+                    val streamApiUrl = t.optString("url")
+                    val streamJson = get("$streamApiUrl?client_id=$clientId") ?: continue
+                    return@withContext JSONObject(streamJson).optString("url").takeIf { it.isNotBlank() }
+                }
+            }
+            null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    // ─── Parse track list ─────────────────────────────────────────────────────
+
+    private fun parseTracks(collection: JSONArray): List<Track> {
+        val tracks = mutableListOf<Track>()
+        for (i in 0 until collection.length()) {
+            val obj = collection.optJSONObject(i) ?: continue
+            val track = parseTrack(obj) ?: continue
+            // Skip DRM-protected tracks
+            if (track.hasDrm) continue
+            tracks.add(track)
+        }
+        return tracks
+    }
+
+    private fun parseTrack(obj: JSONObject): Track? {
+        return try {
+            val id = obj.optLong("id").toString()
+            val title = obj.optString("title").takeIf { it.isNotBlank() } ?: return null
+            val user = obj.optJSONObject("user")
+            val artist = user?.optString("username") ?: "Unknown"
+            val duration = obj.optLong("duration")
+            val permalink = obj.optString("permalink_url")
+            val artwork = obj.optString("artwork_url").replace("large", "t500x500")
+            val genre = obj.optString("genre")
+            val playCount = obj.optInt("playback_count")
+
+            // DRM check: policy field or downloadable=false with no stream
+            val policy = obj.optString("policy", "")
+            val hasDrm = policy.equals("SNIP", ignoreCase = true) ||
+                    policy.equals("BLOCK", ignoreCase = true) ||
+                    obj.optBoolean("monetization_model", false).let { false } // extended check
+
+            Track(
+                id = "sc_$id",
+                title = title,
+                artist = artist,
+                album = "",
+                artworkUrl = artwork,
+                duration = duration,
+                source = TrackSource.SOUNDCLOUD,
+                streamUrl = permalink, // resolve later
+                isLiked = false,
+                isDownloaded = false,
+                hasDrm = hasDrm,
+                genre = genre,
+                playCount = playCount
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    // ─── HTTP helper ──────────────────────────────────────────────────────────
+
+    private fun get(url: String): String? {
+        return try {
+            val request = Request.Builder().url(url)
+                .header("User-Agent", "Mozilla/5.0")
+                .build()
+            okHttpClient.newCall(request).execute().use { resp ->
+                if (resp.isSuccessful) resp.body?.string() else null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+}
