@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project(aezora_audio)
 
-set(SOUNDTOUCH_DIR ${CMAKE_SOURCE_DIR}/../../../third_party/SoundTouch)
+set(SOUNDTOUCH_DIR ${CMAKE_SOURCE_DIR}/../../third_party/SoundTouch)
 
 file(GLOB ST_SRC
     ${SOUNDTOUCH_DIR}/source/SoundTouch/*.cpp
