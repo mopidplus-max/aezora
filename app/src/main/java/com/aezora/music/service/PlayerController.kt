@@ -185,12 +185,33 @@ class PlayerController @Inject constructor(
     // ─── Speed / Pitch ────────────────────────────────────────────────────────
 
     fun setSpeedMode(mode: SpeedMode) {
-        // Convert semitones to pitch multiplier: 2^(semitones/12)
-        val pitchMultiplier = 2f.pow(mode.pitchSemitones / 12f)
-        sonicProcessor.setPitch(pitchMultiplier)
-        // Keep normal tempo (pitch shift only)
-        sonicProcessor.setSpeed(1f)
-        _state.update { it.copy(speedMode = mode) }
+
+        when (mode) {
+
+            SpeedMode.NORMAL -> {
+                player.playbackParameters = PlaybackParameters(1f)
+            }
+
+            SpeedMode.SLOWED -> {
+                player.playbackParameters = PlaybackParameters(0.85f)
+            }
+
+            SpeedMode.SPEED_UP -> {
+                player.playbackParameters = PlaybackParameters(1.15f)
+            }
+
+            SpeedMode.NIGHTCORE -> {
+                player.playbackParameters = PlaybackParameters(1.25f)
+            }
+
+            else -> {
+                player.playbackParameters = PlaybackParameters(1f)
+            }
+        }
+
+        _state.update {
+            it.copy(speedMode = mode)
+        }
     }
 
     // ─── Equalizer ────────────────────────────────────────────────────────────
