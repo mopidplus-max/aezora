@@ -9,6 +9,7 @@ import com.aezora.music.data.local.PlaylistDao
 import com.aezora.music.data.local.TrackDao
 import com.aezora.music.data.remote.soundcloud.SoundCloudService
 import com.aezora.music.data.remote.yandex.YandexMusicService
+import com.aezora.music.domain.repository.MusicRepository
 import com.aezora.music.service.PlayerController
 import dagger.Module
 import dagger.Provides
