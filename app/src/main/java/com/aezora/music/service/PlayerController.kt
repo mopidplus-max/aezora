@@ -5,7 +5,6 @@ import android.media.audiofx.Equalizer
 import androidx.media3.common.*
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.audio.SonicAudioProcessor
 import com.aezora.music.domain.model.*
@@ -39,12 +38,9 @@ class PlayerController @Inject constructor(
     init {
         player = ExoPlayer.Builder(
             context,
-            DefaultRenderersFactory(context).setEnableAudioTrackPlaybackParams(false)
-        )
-        .setAudioSink(
-            DefaultAudioSink.Builder()
-                .setAudioProcessors(arrayOf(sonicProcessor))
-                .build()
+            DefaultRenderersFactory(context)
+                .setEnableAudioTrackPlaybackParams(false)
+        ).build()
         )
         .build()
 
