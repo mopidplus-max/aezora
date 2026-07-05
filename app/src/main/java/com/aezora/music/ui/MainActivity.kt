@@ -166,7 +166,6 @@ fun AezoraApp(viewModel: MainViewModel) {
             enter = slideInVertically { it },
             exit = slideOutVertically { it }
         ) {
-            PlayerScreen(
         PlayerScreen(
             playerState = playerState,
             onDismiss = { showPlayer = false },
