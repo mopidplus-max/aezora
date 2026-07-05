@@ -57,7 +57,7 @@ object AppModule {
     @OptIn(UnstableApi::class)
     @Provides
     @Singleton
-    fun providePlayerController(@ApplicationContext ctx: Context) = PlayerController(ctx)
+    fun providePlayerController(@ApplicationContext ctx: Context, repository: MusicRepository) = PlayerController(ctx, repository)
 
     @Provides
     @Singleton
