@@ -193,7 +193,7 @@ class PlayerController @Inject constructor(
 fun setSpeedMode(mode: SpeedMode) {
 
     val pitchMultiplier =
-        kotlin.math.pow(2.0, mode.pitchSemitones / 12.0).toFloat()
+        2.0.pow( mode.pitchSemitones / 12.0).toFloat()
 
     sonicProcessor.setSpeed(1f)
     sonicProcessor.setPitch(pitchMultiplier)
