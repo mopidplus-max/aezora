@@ -4,10 +4,7 @@ import android.content.Context
 import android.media.audiofx.Equalizer
 import androidx.media3.common.*
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.audio.AudioSink
-import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.SonicAudioProcessor
 import com.aezora.music.domain.model.*
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -36,23 +33,7 @@ class PlayerController @Inject constructor(
     private var equalizer: Equalizer? = null
 
     init {
-        val renderersFactory = object : DefaultRenderersFactory(context) {
-            override fun buildAudioSink(
-                context: Context,
-                enableFloatOutput: Boolean,
-                enableAudioTrackPlaybackParams: Boolean,
-                enableOffload: Boolean
-            ): AudioSink {
-                return DefaultAudioSink.Builder(context)
-                    .setAudioProcessorChain(
-                        DefaultAudioSink.DefaultAudioProcessorChain(sonicProcessor)
-                    )
-                    .build()
-            }
-        }
-
         player = ExoPlayer.Builder(context)
-            .setRenderersFactory(renderersFactory)
             .build()
 
         setupPlayerListener()

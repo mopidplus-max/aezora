@@ -1,3 +1,5 @@
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 package com.aezora.music.data.remote.yandex
 
 import com.aezora.music.domain.model.Playlist
@@ -271,12 +273,7 @@ class YandexMusicService @Inject constructor(
         }
     }
 
-    private fun post(path: String, body: String): String? {
-        return try {
-            val rb = okhttp3.RequestBody.create(
-                okhttp3.MediaType.parse("application/x-www-form-urlencoded"),
-                body
-            )
+            val rb = body.toRequestBody("application/x-www-form-urlencoded".toMediaType())
             val req = Request.Builder()
                 .url("$BASE_URL$path")
                 .post(rb)
