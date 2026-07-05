@@ -167,19 +167,20 @@ fun AezoraApp(viewModel: MainViewModel) {
             exit = slideOutVertically { it }
         ) {
             PlayerScreen(
-                playerState = playerState,
-                onDismiss = { showPlayer = false },
-                onTogglePlay = { viewModel.togglePlayPause() },
-                onNext = { viewModel.next() },
-                onPrevious = { viewModel.previous() },
-                onSeek = { viewModel.seekTo(it) },
-                onLike = { viewModel.toggleLike(it) },
-                onSetSpeedMode = { viewModel.setSpeedMode(it) },
-                onSetRepeat = { viewModel.setRepeatMode(it) },
-                onToggleShuffle = { viewModel.toggleShuffle() },
-                onApplyEq = { viewModel.applyEqPreset(it) },
-                onAddToQueue = { /* show track picker */ }
-            )
+        PlayerScreen(
+            playerState = playerState,
+            onDismiss = { showPlayer = false },
+            onTogglePlay = { viewModel.togglePlayPause() },
+            onNext = { viewModel.next() },
+            onPrevious = { viewModel.previous() },
+            onSeek = { ms -> viewModel.seekTo(ms) },
+            onLike = { track -> viewModel.toggleLike(track) },
+            onSetSpeedMode = { mode -> viewModel.setSpeedMode(mode) },
+            onSetRepeat = { mode -> viewModel.setRepeatMode(mode) },
+            onToggleShuffle = { viewModel.toggleShuffle() },
+            onApplyEq = { preset -> viewModel.applyEqPreset(preset) },
+            onAddToQueue = { }
+        )
         }
 
         // ── Add to Playlist Sheet ─────────────────────────────────────────────
