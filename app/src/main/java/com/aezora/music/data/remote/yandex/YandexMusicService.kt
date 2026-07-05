@@ -272,6 +272,7 @@ class YandexMusicService @Inject constructor(
         } catch (e: Exception) {
             null
         }
+    }
     private fun post(path: String, body: String): String? {
         return try {
             val rb = body.toRequestBody("application/x-www-form-urlencoded".toMediaType())
