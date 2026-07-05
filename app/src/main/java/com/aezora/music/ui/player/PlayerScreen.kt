@@ -34,7 +34,7 @@ fun PlayerScreen(
     onSeek: (Long) -> Unit,
     onLike: (Track) -> Unit,
     onSetSpeedMode: (SpeedMode) -> Unit,
-    onSetRepeat: (RepeatMode) -> Unit,
+    onSetRepeat: (com.aezora.music.domain.model.RepeatMode) -> Unit,
     onToggleShuffle: () -> Unit,
     onApplyEq: (EqualizerPreset) -> Unit,
     onAddToQueue: () -> Unit
