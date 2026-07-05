@@ -7,6 +7,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.audio.SonicAudioProcessor
 import com.aezora.music.domain.model.*
+import com.aezora.music.domain.repository.MusicRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -17,7 +18,8 @@ import kotlin.math.pow
 @UnstableApi
 @Singleton
 class PlayerController @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val repository: MusicRepository
 ) {
     val player: ExoPlayer
 
@@ -82,28 +84,43 @@ class PlayerController @Inject constructor(
     // ─── Playback Control ─────────────────────────────────────────────────────
 
     fun play(tracks: List<Track>, startIndex: Int = 0) {
-        val items = tracks.map { track ->
-            val uri = track.localPath ?: track.streamUrl
-            MediaItem.Builder()
-                .setUri(uri)
-                .setMediaId(track.id)
-                .setMediaMetadata(
-                    MediaMetadata.Builder()
-                        .setTitle(track.title)
-                        .setArtist(track.artist)
-                        .setArtworkUri(
-                            if (track.artworkUrl.isNotBlank())
-                                android.net.Uri.parse(track.artworkUrl)
-                            else null
-                        )
-                        .build()
+        scope.launch {
+            val resolved = tracks.map { track ->
+                if (track.localPath != null) {
+                    track
+                } else {
+                    val url = repository.resolveStreamUrl(track) ?: track.streamUrl
+                    track.copy(streamUrl = url)
+                }
+            }
+
+            val items = resolved.map { track ->
+                MediaItem.Builder()
+                    .setUri(track.localPath ?: track.streamUrl)
+                    .setMediaId(track.id)
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle(track.title)
+                            .setArtist(track.artist)
+                            .setArtworkUri(
+                                if (track.artworkUrl.isNotBlank()) android.net.Uri.parse(track.artworkUrl) else null
+                            )
+                            .build()
+                    )
+                    .build()
+            }
+
+            player.setMediaItems(items, startIndex, 0)
+            player.prepare()
+            player.play()
+            _state.update {
+                it.copy(
+                    queue = resolved,
+                    queueIndex = startIndex,
+                    currentTrack = resolved.getOrNull(startIndex)
                 )
-                .build()
+            }
         }
-        player.setMediaItems(items, startIndex, 0)
-        player.prepare()
-        player.play()
-        _state.update { it.copy(queue = tracks, queueIndex = startIndex, currentTrack = tracks.getOrNull(startIndex)) }
     }
 
     fun playTrack(track: Track) {
