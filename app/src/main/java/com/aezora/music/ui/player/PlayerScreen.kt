@@ -249,19 +249,19 @@ fun PlayerScreen(
                     // Repeat
                     IconButton(onClick = {
                         val next = when (playerState.repeatMode) {
-                            RepeatMode.NONE -> RepeatMode.ALL
-                            RepeatMode.ALL -> RepeatMode.ONE
-                            RepeatMode.ONE -> RepeatMode.NONE
+                            com.aezora.music.domain.model.RepeatMode.NONE -> com.aezora.music.domain.model.RepeatMode.ALL
+                            com.aezora.music.domain.model.RepeatMode.ALL -> com.aezora.music.domain.model.RepeatMode.ONE
+                            com.aezora.music.domain.model.RepeatMode.ONE -> com.aezora.music.domain.model.RepeatMode.NONE
                         }
                         onSetRepeat(next)
                     }) {
                         Icon(
                             imageVector = when (playerState.repeatMode) {
-                                RepeatMode.ONE -> Icons.Filled.RepeatOne
+                                com.aezora.music.domain.model.RepeatMode.ONE -> Icons.Filled.RepeatOne
                                 else -> Icons.Filled.Repeat
                             },
                             contentDescription = "Repeat",
-                            tint = if (playerState.repeatMode != RepeatMode.NONE)
+                            tint = if (playerState.repeatMode != com.aezora.music.domain.model.RepeatMode.NONE)
                                 AezoraColors.primary else AezoraColors.onSurface.copy(0.5f),
                             modifier = Modifier.size(24.dp)
                         )
