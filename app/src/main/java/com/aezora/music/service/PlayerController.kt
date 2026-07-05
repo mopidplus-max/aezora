@@ -41,8 +41,6 @@ class PlayerController @Inject constructor(
             DefaultRenderersFactory(context)
                 .setEnableAudioTrackPlaybackParams(false)
         ).build()
-        )
-        .build()
 
         setupPlayerListener()
         startPositionTracking()
