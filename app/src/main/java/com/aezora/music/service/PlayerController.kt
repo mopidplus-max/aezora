@@ -5,6 +5,8 @@ import android.media.audiofx.Equalizer
 import androidx.media3.common.*
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.audio.DefaultAudioSink
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.audio.SonicAudioProcessor
 import com.aezora.music.domain.model.*
 import com.aezora.music.domain.repository.MusicRepository
@@ -35,8 +37,16 @@ class PlayerController @Inject constructor(
     private var equalizer: Equalizer? = null
 
     init {
-        player = ExoPlayer.Builder(context)
-            .build()
+        player = ExoPlayer.Builder(
+            context,
+            DefaultRenderersFactory(context).setEnableAudioTrackPlaybackParams(false)
+        )
+        .setAudioSink(
+            DefaultAudioSink.Builder()
+                .setAudioProcessors(arrayOf(sonicProcessor))
+                .build()
+        )
+        .build()
 
         setupPlayerListener()
         startPositionTracking()
@@ -185,15 +195,20 @@ class PlayerController @Inject constructor(
     // ─── Speed / Pitch ────────────────────────────────────────────────────────
 
     
+
 fun setSpeedMode(mode: SpeedMode) {
 
-    player.playbackParameters = when (mode) {
-        SpeedMode.NORMAL -> PlaybackParameters(1.0f)
-        SpeedMode.SPEED_UP -> PlaybackParameters(1.15f)
-        SpeedMode.ULTRA_SPEED_UP -> PlaybackParameters(1.30f)
-        SpeedMode.SLOWED -> PlaybackParameters(0.85f)
-        SpeedMode.ULTRA_SLOWED -> PlaybackParameters(0.70f)
+    val pitchMultiplier =
+        kotlin.math.pow(2.0, mode.pitchSemitones / 12.0).toFloat()
+
+    sonicProcessor.setSpeed(1f)
+    sonicProcessor.setPitch(pitchMultiplier)
+
+    _state.update {
+        it.copy(speedMode = mode)
     }
+}
+
 
     _state.update {
         it.copy(speedMode = mode)
