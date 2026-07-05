@@ -210,10 +210,6 @@ fun setSpeedMode(mode: SpeedMode) {
 }
 
 
-    _state.update {
-        it.copy(speedMode = mode)
-    }
-}
 
 // ─── Equalizer ────────────────────────────────────────────────────────────
 
