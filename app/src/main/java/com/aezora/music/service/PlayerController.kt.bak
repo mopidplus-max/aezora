@@ -5,10 +5,9 @@ import android.media.audiofx.Equalizer
 import androidx.media3.common.*
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.audio.SonicAudioProcessor
-import androidx.media3.exoplayer.audio.DefaultAudioSink
-import androidx.media3.common.audio.AudioProcessor
 import com.aezora.music.domain.model.*
 import com.aezora.music.domain.repository.MusicRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -29,11 +28,6 @@ class PlayerController @Inject constructor(
     // Sonic processor for pitch shifting
     private val sonicProcessor = SonicAudioProcessor()
 
-    private val audioSink = DefaultAudioSink.Builder()
-        .setAudioProcessors(arrayOf<AudioProcessor>(sonicProcessor))
-        .build()
-
-
     private val _state = MutableStateFlow(PlayerState())
     val state: StateFlow<PlayerState> = _state.asStateFlow()
 
@@ -45,10 +39,14 @@ class PlayerController @Inject constructor(
     init {
         player = ExoPlayer.Builder(
             context,
-            DefaultRenderersFactory(context)
-                .setEnableAudioTrackPlaybackParams(false)
-                .setAudioSink(audioSink)
-        ).build()
+            DefaultRenderersFactory(context).setEnableAudioTrackPlaybackParams(false)
+        )
+        .setAudioSink(
+            DefaultAudioSink.Builder()
+                .setAudioProcessors(arrayOf(sonicProcessor))
+                .build()
+        )
+        .build()
 
         setupPlayerListener()
         startPositionTracking()
@@ -201,7 +199,7 @@ class PlayerController @Inject constructor(
 fun setSpeedMode(mode: SpeedMode) {
 
     val pitchMultiplier =
-        2.0.pow( mode.pitchSemitones / 12.0).toFloat()
+        kotlin.math.pow(2.0, mode.pitchSemitones / 12.0).toFloat()
 
     sonicProcessor.setSpeed(1f)
     sonicProcessor.setPitch(pitchMultiplier)
